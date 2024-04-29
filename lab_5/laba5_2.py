@@ -1,5 +1,5 @@
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button, CheckButtons
 from scipy import signal
 # ^ Завантаження бібліотек ^
