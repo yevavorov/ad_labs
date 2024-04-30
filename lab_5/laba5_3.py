@@ -46,20 +46,19 @@ def all_code(doc):
             last_noise_covariance = noise_covariance
             return graph
         
-    # Відфільтрований шум (свій)
-    def harmonic_with_noise_filtered(t, amplitude, frequency, s_phase, w):
-        graph = amplitude * np.sin(2 * np.pi * frequency * t + s_phase)
-        filtered_noise = np.zeros_like(noise)
+    # Відфільтрований шум (свій)  >>>  Moving average (Ковзне/рухоме середнє)
+    def harmonic_with_noise_filtered(noised_graph, w):
+        filtered_graph = np.zeros_like(noised_graph)
         window_size = w
-        for i in range(len(noise)):
+        for i in range(len(noised_graph)):
             start_index = max(0, i - window_size // 2)
-            end_index = min(len(noise), i + window_size // 2 + 1)
-            filtered_noise[i] = np.mean(noise[start_index:end_index])
-        return graph + filtered_noise
+            end_index = min(len(noised_graph), i + window_size // 2 + 1)
+            filtered_graph[i] = np.mean(noised_graph[start_index:end_index])
+        return filtered_graph
 
-
-    source = ColumnDataSource(data=dict(x=t, y=harmonic_with_noise(t, default_amplitude, default_frequency, default_phase, default_noise_mean, default_noise_covariance, default_show_noise)))
-    source2 = ColumnDataSource(data=dict(x=t, y=harmonic_with_noise_filtered(t, default_amplitude, default_frequency, default_phase, default_window_size)))
+    g_default = harmonic_with_noise(t, default_amplitude, default_frequency, default_phase, default_noise_mean, default_noise_covariance, default_show_noise)
+    source = ColumnDataSource(data=dict(x=t, y=g_default))
+    source2 = ColumnDataSource(data=dict(x=t, y=harmonic_with_noise_filtered(g_default, default_window_size)))
 
     # Графік
     p = figure(width=800, height=400, y_range=(-1, 1), x_range=(0, 10))
@@ -96,8 +95,9 @@ def all_code(doc):
             show_noise = True
         else:
             show_noise = False
-        source.data = dict(x=t, y=harmonic_with_noise(t, amplitude, frequency, phase, noise_mean, noise_covariance, show_noise))
-        source2.data = dict(x=t, y=harmonic_with_noise_filtered(t, amplitude, frequency, phase, w))
+        g = harmonic_with_noise(t, amplitude, frequency, phase, noise_mean, noise_covariance, show_noise)
+        source.data = dict(x=t, y=g)
+        source2.data = dict(x=t, y=harmonic_with_noise_filtered(g, w))
 
     def color_update(event):
         new_color = event.item
@@ -123,8 +123,9 @@ def all_code(doc):
         s_window_size.value = default_window_size
         checkbox_show_noise.active = []
         line.glyph.line_color = default_color
-        source.data = dict(x=t, y=harmonic_with_noise(t, default_amplitude, default_frequency, default_phase, default_noise_mean, default_noise_covariance, default_show_noise))
-        source2.data = dict(x=t, y=harmonic_with_noise_filtered(t, default_amplitude, default_frequency, default_phase, default_window_size))
+        g_default = harmonic_with_noise(t, default_amplitude, default_frequency, default_phase, default_noise_mean, default_noise_covariance, default_show_noise)
+        source.data = dict(x=t, y=g_default)
+        source2.data = dict(x=t, y=harmonic_with_noise_filtered(g_default, default_window_size))
 
     button_reset = Button(label="Reset", button_type="warning")
     button_reset.on_event("button_click", reset)
